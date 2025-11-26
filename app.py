@@ -11,14 +11,15 @@ try:
 except ImportError:
     pdfplumber = None
 
+
 # ---- Oldal beállítások ----
 st.set_page_config(
-    page_title="Moovia PDF ➜ Unilog Excel",
+    page_title="Moovia PDF → Unilog Excel",
     page_icon="📦",
     layout="centered"
 )
 
-st.title("📦 Moovia PDF ➜ Unilog Excel")
+st.title("Moovia PDF → Unilog Excel")
 st.caption("Order picking PDF-ek automatikus feldolgozása → Cikkszám + Mennyiség → letölthető Excel.")
 
 
@@ -83,7 +84,6 @@ def parse_items(text: str) -> List[Tuple[str, int]]:
             qty = qty_inline
 
             if qty is None:
-                # nézzünk előre max 3 sort
                 for la_i in range(1, 4):
                     if i + la_i >= len(lines):
                         break
@@ -120,10 +120,10 @@ uploaded_files = st.file_uploader(
 )
 
 if not uploaded_files:
-    st.info("👆 Válaszd ki a Moovia 'Order picking' PDF-eket.")
+    st.info("Válaszd ki a Moovia 'Order picking' PDF-eket.")
 else:
     outputs: Dict[str, bytes] = {}
-    st.write(f"**Feldolgozásra kijelölt fájlok száma:** {len(uploaded_files)}")
+    st.write(f"Feldolgozásra kijelölt fájlok száma: {len(uploaded_files)}")
     st.divider()
 
     for file in uploaded_files:
@@ -134,26 +134,24 @@ else:
         items = parse_items(text)
         df = items_to_dataframe(items)
 
-        st.subheader(f"📄 {order_id}")
+        st.subheader(f"Fájl: {order_id}")
         st.dataframe(df, use_container_width=True)
 
-        # Excel fájl bufferbe
         xbuf = io.BytesIO()
         with pd.ExcelWriter(xbuf, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Kitárolás")
+            df.to_excel(writer, index=False, sheet_name="Kitarolas")
         xbuf.seek(0)
 
         xlsx_name = f"Order_picking_{order_id}.xlsx"
         outputs[xlsx_name] = xbuf.getvalue()
 
         st.download_button(
-            label=f⬇️ Letöltés: {xlsx_name}",
+            label=f"Letöltés: {xlsx_name}",
             data=outputs[xlsx_name],
             file_name=xlsx_name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-    # ZIP gomb
     if outputs:
         st.divider()
         zip_buf = io.BytesIO()
@@ -163,7 +161,7 @@ else:
         zip_buf.seek(0)
 
         st.download_button(
-            label="📦 Összes Excel egy ZIP-ben",
+            label="Összes Excel ZIP-ben",
             data=zip_buf.getvalue(),
             file_name="Moovia_unilog_excels.zip",
             mime="application/zip",
@@ -174,18 +172,14 @@ else:
 st.sidebar.header("Segítség")
 st.sidebar.markdown(
     """
-**Használat lépései**
-1. Töltsd fel a Moovia *Order picking* PDF-eket.
-2. A rendszer kinyeri:
-   - Cikkszám (`Vxxxxx`)
-   - Mennyiség (`pcs`)
-3. Minden PDF-ből külön Excel fájlt kapsz.
-4. Igény szerint ZIP-be is letöltheted az összeset.
+Használat:
+1. Töltsd fel a Moovia 'Order picking' PDF-eket.
+2. A rendszer kinyeri a cikkszámokat és a pcs mennyiséget.
+3. Minden PDF-ből külön Excel készül.
+4. Az összes letölthető egy ZIP-ben is.
 
-**Megosztás kollégáknak**
-Ha a Streamlit Cloudon fut:
-- csak linket adsz nekik
-- semmit nem kell telepíteniük
-- bármelyik böngészőből használható
+Streamlit Cloud:
+- kollégák bármilyen böngészőből használhatják
+- semmit nem kell telepíteni
 """
 )
